@@ -71,19 +71,19 @@ func TestParseConflictStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseConflictStatuses(tt.statusStr)
+			got, err := ParseConflictStatus(tt.statusStr)
 			if tt.wantError {
 				if err == nil {
-					t.Errorf("ParseConflictStatuses(%q) expected error, got nil", tt.statusStr)
+					t.Errorf("ParseConflictStatus(%q) expected error, got nil", tt.statusStr)
 				}
 				return
 			}
 			if err != nil {
-				t.Errorf("ParseConflictStatuses(%q) unexpected error: %v", tt.statusStr, err)
+				t.Errorf("ParseConflictStatus(%q) unexpected error: %v", tt.statusStr, err)
 				return
 			}
 			if !slices.Equal(got, tt.want) {
-				t.Errorf("ParseConflictStatuses(%q) = %v; want %v", tt.statusStr, got, tt.want)
+				t.Errorf("ParseConflictStatus(%q) = %v; want %v", tt.statusStr, got, tt.want)
 			}
 		})
 	}

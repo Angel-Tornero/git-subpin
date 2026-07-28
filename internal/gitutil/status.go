@@ -12,7 +12,7 @@ type ConflictStatus struct {
 	Path, StatusCode, BaseSHA, OursSHA, TheirsSHA string
 }
 
-func ParseConflictStatuses(statusStr string) ([]ConflictStatus, error) {
+func ParseConflictStatus(statusStr string) ([]ConflictStatus, error) {
 	statusLines := strings.Split(statusStr, "\n")
 	var conflicts []ConflictStatus
 	for _, line := range statusLines {
@@ -20,8 +20,8 @@ func ParseConflictStatuses(statusStr string) ([]ConflictStatus, error) {
 		if fields[0] != UnmergedEntryType {
 			continue
 		}
-		if len(fields) < 10 {
-			return nil, fmt.Errorf("could not parse status line (expected at least 10 fields, got %d): %q", len(fields), line)
+		if len(fields) != 11 {
+			return nil, fmt.Errorf("could not parse status line (expected at least 11 fields, got %d): %q", len(fields), line)
 		}
 		if fields[3] != SubmoduleOctalFileMode ||
 			fields[4] != SubmoduleOctalFileMode ||
@@ -30,7 +30,7 @@ func ParseConflictStatuses(statusStr string) ([]ConflictStatus, error) {
 
 			continue
 		}
-		path := fields[len(fields)-1]
+		path := fields[10]
 		statusCode := fields[1]
 		baseSHA := fields[7]
 		oursSHA := fields[8]
