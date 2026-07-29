@@ -7,6 +7,6 @@ type Rule struct {
 }
 
 type Policy struct {
-	Version int
+	Version string
 	Rules   []Rule
 }

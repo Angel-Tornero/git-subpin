@@ -26,7 +26,7 @@ rules:
     description: "test always wins by default"
 `),
 			want: &Policy{
-				Version: 1,
+				Version: "1",
 				Rules: []Rule{
 					{From: "prod", To: "test", Submodule: "*", Strategy: KeepTarget, Description: "test always wins by default"},
 				},
@@ -47,7 +47,7 @@ rules:
     strategy: keep-source
 `),
 			want: &Policy{
-				Version: 1,
+				Version: "1",
 				Rules: []Rule{
 					{From: "prod", To: "test", Submodule: "*", Strategy: KeepTarget},
 					{From: "prod", To: "test", Submodule: "third_party/grpc", Strategy: KeepSource},
@@ -65,7 +65,7 @@ rules:
     strategy: manual
 `),
 			want: &Policy{
-				Version: 1,
+				Version: "1",
 				Rules: []Rule{
 					{From: "prod", To: "test", Submodule: "third_party/keycloak", Strategy: Manual},
 				},
@@ -102,12 +102,15 @@ rules:
 			wantError:  true,
 		},
 		{
-			name: "version as quoted string fails",
+			name: "version as quoted string still parses correctly",
 			policyYAML: strings.NewReader(`
 version: "1"
 rules: []
 `),
-			wantError: true,
+			want: &Policy{
+				Version: "1",
+				Rules:   []Rule{},
+			},
 		},
 	}
 
