@@ -49,8 +49,8 @@ jobs:
 
       - name: Assemble release artifacts
         run: |
-          cp action/action.yml dist/action.yml
-          sed "s/__SHA__/${SHA}/g" action/invoke-binary.js > dist/invoke-binary.js
+          cp action.yml dist/action.yml
+          sed "s/__SHA__/${SHA}/g" invoke-binary.js > dist/invoke-binary.js
           cp README.md LICENSE dist/
 
       - name: Commit release branch and move tags
