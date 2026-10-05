@@ -1,0 +1,81 @@
+name: Release
+
+# Pushing a vX.Y.Z tag on main triggers a release: the binaries are built, the
+# commit SHA is pinned into the shim, and a minimal release branch is assembled
+# and tagged so `uses: Angel-Tornero/git-subpin@vX` resolves to it.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release branch
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.ref_name }}
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet and test
+        run: |
+          go vet ./...
+          go test -race ./...
+
+      - name: Build static binaries
+        run: |
+          mkdir -p dist
+          build() {
+            goos="$1"; goarch="$2"; ext="$3"
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+              go build -trimpath -ldflags "-s -w" \
+              -o "dist/main-${goos}-${goarch}-${SHA}${ext}" ./cmd/git-subpin
+          }
+          build linux amd64 ""
+          build linux arm64 ""
+          build darwin arm64 ""
+          build windows amd64 ".exe"
+
+      - name: Assemble release artifacts
+        run: |
+          cp action/action.yml dist/action.yml
+          sed "s/__SHA__/${SHA}/g" action/invoke-binary.js > dist/invoke-binary.js
+          cp README.md LICENSE dist/
+
+      - name: Commit release branch and move tags
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stage the artifacts outside the repo so the clean-up below cannot
+          # touch them, then rebuild the release branch from an empty tree.
+          stage="$(mktemp -d)"
+          cp dist/action.yml dist/invoke-binary.js dist/README.md dist/LICENSE "$stage/"
+          cp dist/main-* "$stage/"
+
+          git checkout --orphan release
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdx >/dev/null 2>&1 || true
+          cp "$stage"/* .
+          git add -A
+          git commit -m "release ${VERSION} (${SHA})"
+
+          # Point the exact version and the major alias at the release commit.
+          major="${VERSION%%.*}"
+          git tag -f "${VERSION}"
+          git tag -f "${major}"
+
+          git push --force origin release
+          git push --force origin "refs/tags/${VERSION}"
+          git push --force origin "refs/tags/${major}"
