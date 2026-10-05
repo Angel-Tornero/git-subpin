@@ -1,14 +1,13 @@
 name: Test action
 
-# Runs the published action from the release branch on every supported runner,
-# to confirm the shim picks the right binary and the binary runs end to end.
-# The throwaway repo has no submodule conflicts, so the action is a no-op and
-# exits 0. Dispatch manually after a release has been published.
+# End-to-end test of the published action from the v1 tag: build a real
+# submodule pointer conflict, run the action, and assert it staged the source
+# (keep-source) pointer. Runs on every supported runner. Dispatch manually.
 on:
   workflow_dispatch:
 
 jobs:
-  run:
+  resolve:
     name: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -19,16 +18,45 @@ jobs:
           - macos-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
-    steps:
-      - name: Set up a throwaway repo with a policy
+    defaults:
+      run:
         shell: bash
+    env:
+      BASE_SHA: "1111111111111111111111111111111111111111"
+      OURS_SHA: "2222222222222222222222222222222222222222"
+      THEIRS_SHA: "3333333333333333333333333333333333333333"
+    steps:
+      - name: Build a conflicted submodule pointer
         run: |
-          git init -q
-          printf 'version: "1"\nrules: []\n' > .subpin.yml
+          git init -q -b main
+          # A nested repo makes git report a real gitlink in the worktree.
+          mkdir -p third_party/keycloak
+          git -C third_party/keycloak init -q
+          printf '[submodule "third_party/keycloak"]\n\tpath = third_party/keycloak\n\turl = ./x\n' > .gitmodules
+          # Fabricate the unmerged index entry (stages base/ours/theirs) that a
+          # submodule merge conflict produces.
+          printf "160000 %s 1\tthird_party/keycloak\n160000 %s 2\tthird_party/keycloak\n160000 %s 3\tthird_party/keycloak\n" \
+            "$BASE_SHA" "$OURS_SHA" "$THEIRS_SHA" | git update-index --index-info
+          printf 'version: "1"\nrules:\n  - from: "*"\n    to: "*"\n    submodule: "*"\n    strategy: keep-source\n' > .subpin.yml
 
       - name: Run git-subpin
-        uses: Angel-Tornero/git-subpin@release
+        uses: Angel-Tornero/git-subpin@v1
         with:
           from: dev
           to: prod
           config: .subpin.yml
+
+      - name: Assert the source pointer was staged
+        run: |
+          got="$(git rev-parse :third_party/keycloak)"
+          echo "resolved pointer: $got"
+          if [ "$got" != "$THEIRS_SHA" ]; then
+            echo "::error::expected $THEIRS_SHA (keep-source), got $got"
+            exit 1
+          fi
+          if git status --porcelain=v2 | grep -q '^u '; then
+            echo "::error::submodule conflicts still present after resolve"
+            git status --porcelain=v2
+            exit 1
+          fi
+          echo "keep-source resolved correctly on ${{ matrix.os }}"
