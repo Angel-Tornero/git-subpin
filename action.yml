@@ -1,0 +1,23 @@
+name: git-subpin
+description: Policy-driven resolution of Git submodule pointer conflicts during automated merges.
+author: Angel-Tornero
+
+branding:
+  icon: git-merge
+  color: purple
+
+inputs:
+  from:
+    description: Source branch of the merge (the branch being merged in).
+    required: true
+  to:
+    description: Target branch of the merge (the branch being merged into).
+    required: true
+  config:
+    description: Path to the policy file.
+    required: false
+    default: .subpin.yml
+
+runs:
+  using: node24
+  main: invoke-binary.js
