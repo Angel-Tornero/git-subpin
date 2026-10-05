@@ -14,8 +14,8 @@ func TestStrategyValid(t *testing.T) {
 	}{
 		{name: "keep-source is valid", strategy: KeepSource, want: true},
 		{name: "keep-target is valid", strategy: KeepTarget, want: true},
-		{name: "fast-forward is valid", strategy: FastForward, want: true},
 		{name: "manual is valid", strategy: Manual, want: true},
+		{name: "fast-forward is no longer valid", strategy: Strategy("fast-forward"), want: false},
 		{name: "empty string is invalid", strategy: Strategy(""), want: false},
 		{name: "typo is invalid", strategy: Strategy("keep-sourcee"), want: false},
 		{name: "unrelated word is invalid", strategy: Strategy("banana"), want: false},
@@ -39,8 +39,8 @@ func TestStrategyUnmarshalYAML(t *testing.T) {
 	}{
 		{name: "valid keep-target", yamlValue: "keep-target", want: KeepTarget},
 		{name: "valid keep-source", yamlValue: "keep-source", want: KeepSource},
-		{name: "valid fast-forward", yamlValue: "fast-forward", want: FastForward},
 		{name: "valid manual", yamlValue: "manual", want: Manual},
+		{name: "fast-forward is rejected", yamlValue: "fast-forward", wantError: true},
 		{name: "invalid value fails", yamlValue: "keep-sourcee", wantError: true},
 		{name: "empty string value fails", yamlValue: `""`, wantError: true},
 	}
