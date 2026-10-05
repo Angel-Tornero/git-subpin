@@ -2,7 +2,9 @@ name: Test action
 
 # End-to-end test of the published action from the v1 tag: build a real
 # submodule pointer conflict, run the action, and assert it staged the source
-# (keep-source) pointer. Runs on every supported runner. Dispatch manually.
+# (keep-source) pointer. Runs on the Linux runners, where this action is used
+# in practice; the macOS/Windows binaries are shipped but not continuously
+# tested here. Dispatch manually.
 on:
   workflow_dispatch:
 
@@ -15,8 +17,6 @@ jobs:
         os:
           - ubuntu-latest
           - ubuntu-24.04-arm
-          - macos-latest
-          - windows-latest
     runs-on: ${{ matrix.os }}
     defaults:
       run:
