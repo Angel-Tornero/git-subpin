@@ -1,8 +1,9 @@
 name: Test action
 
 # Runs the published action from the release branch on every supported runner,
-# to confirm the shim picks the right binary and the action starts end to end.
-# Dispatch manually after a release has been published.
+# to confirm the shim picks the right binary and the binary runs end to end.
+# The throwaway repo has no submodule conflicts, so the action is a no-op and
+# exits 0. Dispatch manually after a release has been published.
 on:
   workflow_dispatch:
 
@@ -19,6 +20,12 @@ jobs:
           - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Set up a throwaway repo with a policy
+        shell: bash
+        run: |
+          git init -q
+          printf 'version: "1"\nrules: []\n' > .subpin.yml
+
       - name: Run git-subpin
         uses: Angel-Tornero/git-subpin@release
         with:
