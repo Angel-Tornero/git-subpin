@@ -38,6 +38,18 @@ func TestParseConflictStatus(t *testing.T) {
 			wantError: false,
 		},
 		{
+			name:      "path with spaces is preserved",
+			statusStr: `u UU S... 160000 160000 160000 160000 baseSHA oursSHA theirsSHA third party/key cloak`,
+			want: []ConflictStatus{{
+				Path:       "third party/key cloak",
+				StatusCode: "UU",
+				BaseSHA:    "baseSHA",
+				OursSHA:    "oursSHA",
+				TheirsSHA:  "theirsSHA",
+			}},
+			wantError: false,
+		},
+		{
 			name:      "too few fields returns error",
 			statusStr: `u UU S...`,
 			want:      nil,
